@@ -1123,7 +1123,10 @@ def _vis_test(result, vis_data, input_type):
                 im_output = im_output.astype(np.uint8)
 
                 ax = fig.add_subplot(3, num_iter, 2)
-                ax.set_title('initial pose') 
+                if cfg.TEST.SYNTHESIZE:
+                    ax.set_title('target pose')
+                else:
+                    ax.set_title('initial pose')
                 plt.imshow(im_output)
                 plt.axis('off')
 

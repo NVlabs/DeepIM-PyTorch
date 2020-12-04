@@ -95,7 +95,7 @@ Use python3. If ROS is needed, compile with python2.
     ./experiments/scripts/ycb_object_flow_train.sh
 
     # testing, $GPU_ID can be 0, 1, etc.
-    ./experiments/scripts/ycb_object_flow_test.sh $GPU_ID
+    ./experiments/scripts/ycb_object_flow_test.sh $GPU_ID $EPOCH
 
     ```
 
@@ -120,7 +120,7 @@ Use python3. If ROS is needed, compile with python2.
     ./experiments/scripts/ycb_video_flow_train.sh
 
     # testing, $GPU_ID can be 0, 1, etc.
-    ./experiments/scripts/ycb_video_flow_test.sh $GPU_ID
+    ./experiments/scripts/ycb_video_flow_test.sh $GPU_ID $EPOCH
 
     ```
 
