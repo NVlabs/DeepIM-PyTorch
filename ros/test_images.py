@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 
-# --------------------------------------------------------
-# DeepIM
-# Copyright (c) 2018 NVIDIA
-# Licensed under The MIT License [see LICENSE for details]
-# Written by Yu Xiang
-# --------------------------------------------------------
+# Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
+# This work is licensed under the NVIDIA Source Code License - Non-commercial. Full
+# text can be found in LICENSE.md
 
 """Test a DeepIM on images"""
 
@@ -22,7 +19,7 @@ import numpy as np
 
 import _init_paths
 from fcn.train_test import test
-from fcn.config import cfg, cfg_from_file, get_output_dir, write_selected_class_file
+from fcn.config import cfg, cfg_from_file, get_output_dir
 from datasets.factory import get_dataset
 import networks
 import rospy

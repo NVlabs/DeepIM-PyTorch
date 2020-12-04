@@ -1060,6 +1060,7 @@ def _vis_test(result, vis_data, input_type):
         im_input = im_input.astype(np.uint8)
         ax = fig.add_subplot(3, num_iter, 1)
         plt.imshow(im_input)
+        plt.axis('off')
         ax.set_title('input image')
 
         for i in range(num_iter):
@@ -1107,6 +1108,7 @@ def _vis_test(result, vis_data, input_type):
             ax = fig.add_subplot(3, num_iter, num_iter + 1 + i)
             ax.set_title('source iter %d (rot %.2f, tran %.4f)' % (i+1, error_rot_src, error_tran_src)) 
             plt.imshow(im)
+            plt.axis('off')
 
             if i == 0:
                 im = image_tgt_blob[j, :, :, :3].copy()
@@ -1116,26 +1118,28 @@ def _vis_test(result, vis_data, input_type):
                 im = im[:, :, (2, 1, 0)]
                 im = im.astype(np.uint8)
 
-                im_output = 0.7 * im.astype(np.float32) + 0.3 * im_input.astype(np.float32)
+                im_output = 1.0 * im.astype(np.float32) + 0.5 * im_input.astype(np.float32)
                 im_output = np.clip(im_output, 0, 255)
                 im_output = im_output.astype(np.uint8)
 
                 ax = fig.add_subplot(3, num_iter, 2)
-                ax.set_title('target image') 
+                ax.set_title('initial pose') 
                 plt.imshow(im_output)
+                plt.axis('off')
 
             # show estimated image
             im = images_est[j, :, :, :3].copy()
             im = im[:, :, (2, 1, 0)]
             im = im.astype(np.uint8)
 
-            im_output = 0.7 * im.astype(np.float32) + 0.3 * im_input.astype(np.float32)
+            im_output = 1.0 * im.astype(np.float32) + 0.5 * im_input.astype(np.float32)
             im_output = np.clip(im_output, 0, 255)
             im_output = im_output.astype(np.uint8)
 
             ax = fig.add_subplot(3, num_iter, 2 * num_iter + 1 + i)
             ax.set_title('estimate iter %d (rot %.2f, tran %.4f)' % (i+1, error_rot_est, error_tran_est)) 
             plt.imshow(im_output)
+            plt.axis('off')
 
         plt.show()
 

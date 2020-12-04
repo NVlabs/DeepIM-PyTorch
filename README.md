@@ -69,8 +69,14 @@ Use python3. If ROS is needed, compile with python2.
 
 2. run the following script
     ```Shell
+    # testing on color
     ./experiments/scripts/demo.sh
+
+    # testing on RGB-D
+    ./experiments/scripts/demo_rgbd.sh
     ```
+
+<p align="center"><img src="./data/pics/deepim.png" width="640" height="400"/></p>
 
 ### Training your own models with synthetic data for YCB objects
 

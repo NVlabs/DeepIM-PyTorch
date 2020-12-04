@@ -1,9 +1,6 @@
-# --------------------------------------------------------
-# FCN
-# Copyright (c) 2016
-# Licensed under The MIT License [see LICENSE for details]
-# Written by Yu Xiang
-# --------------------------------------------------------
+# Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
+# This work is licensed under the NVIDIA Source Code License - Non-commercial. Full
+# text can be found in LICENSE.md
 
 """FCN config system.
 
@@ -338,16 +335,9 @@ def cfg_from_file(filename):
     _merge_a_into_b(yaml_cfg, __C)
 
 
-def write_selected_class_file(filename, index):
-    # read file
-    with open(filename) as f:
-        lines = [x for x in f.readlines()]
-    lines_selected = [lines[i] for i in index]
-
-    # write new file
-    filename_new = filename + '.selected'
-    f = open(filename_new, 'w')
-    for i in range(len(lines_selected)):
-        f.write(lines_selected[i])
-    f.close()
-    return filename_new
+def yaml_from_file(filename):
+    """Load a config file and merge it into the default options."""
+    import yaml
+    with open(filename, 'r') as f:
+        yaml_cfg = edict(yaml.load(f))
+    return yaml_cfg
