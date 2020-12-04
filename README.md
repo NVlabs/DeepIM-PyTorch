@@ -61,7 +61,7 @@ Use python3. If ROS is needed, compile with python2.
 
 - 3D models of YCB Objects we used [here](https://drive.google.com/file/d/1PTNmhd-eSq0fwSPv0nvQN8h_scR1v-UJ/view?usp=sharing) (3G). Save under $ROOT/data or use a symbol link.
 
-- Our pre-trained checkpoints [here]. Save under $ROOT/data or use a symbol link.
+- Our pre-trained checkpoints [here](https://drive.google.com/file/d/1iokU2LhQbF3kjHDqpb_I1WT1n_XBoQUm/view?usp=sharing) (3G). Save under $ROOT/data or use a symbol link.
 
 ### Running the demo
 
