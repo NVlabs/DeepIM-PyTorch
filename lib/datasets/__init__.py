@@ -1,15 +1,10 @@
-# --------------------------------------------------------
-# FCN
-# Copyright (c) 2016
-# Licensed under The MIT License [see LICENSE for details]
-# Written by Yu Xiang
-# --------------------------------------------------------
+# Copyright (c) 2020 NVIDIA Corporation. All rights reserved.
+# This work is licensed under the NVIDIA Source Code License - Non-commercial. Full
+# text can be found in LICENSE.md
 
 from .imdb import imdb
 from .ycb_video import YCBVideo
 from .ycb_object import YCBObject
-from .linemod import linemod
-from .panda import panda
 from .background import BackgroundDataset
 from .dex_ycb import DexYCBDataset
 import os.path as osp
