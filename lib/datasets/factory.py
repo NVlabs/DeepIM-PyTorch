@@ -8,6 +8,7 @@ __sets = {}
 
 import datasets.ycb_video
 import datasets.ycb_object
+import datasets.ycb_self_supervision
 import datasets.background
 import datasets.dex_ycb
 import numpy as np
@@ -25,6 +26,14 @@ for split in ['train', 'test']:
     print(name)
     __sets[name] = (lambda split=split:
             datasets.YCBObject(split))
+
+# ycb self supervision dataset
+for split in ['train_1', 'train_2', 'train_3', 'train_4', 'train_5', 'test', 'all', 'train_block_median', 'train_block_median_azure', 'train_block_median_demo', 'train_block_median_azure_demo', 'train_table', 'all_ycb', 
+              'debug', 'train_block', 'train_block_azure', 'train_block_big_sim', 'train_block_median_sim', 'train_block_small_sim']:
+    name = 'ycb_self_supervision_{}'.format(split)
+    print(name)
+    __sets[name] = (lambda split=split:
+            datasets.YCBSelfSupervision(split))
 
 # background dataset
 for split in ['coco', 'rgbd', 'nvidia', 'table', 'isaac', 'texture', 'sunrgbd']:

@@ -1,0 +1,38 @@
+EXP_DIR: ycb_object
+INPUT: RGBD
+TRAIN:
+  TRAINABLE: True
+  WEIGHT_DECAY: 0.0001
+  LEARNING_RATE: 0.00001
+  MILESTONES: !!python/tuple [10000]
+  HEATUP: 1
+  ITERNUM: 4
+  MOMENTUM: 0.9
+  BETA: 0.999
+  GAMMA: 0.1
+  SCALES_BASE: !!python/tuple [1.0]
+  IMS_PER_BATCH: 16
+  CLASSES: !!python/tuple [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20]
+  SNAPSHOT_INFIX: ycb_object_20objects_rgbd_self_supervision
+  SNAPSHOT_PREFIX: flownets
+  SNAPSHOT_EPOCHS: 1
+  USE_FLIPPED: False
+  CHROMATIC: True
+  ADD_NOISE: True
+  VISUALIZE: False
+  SYNTHESIZE: True
+  SYNNUM: 80000
+  SYN_TNEAR: 0.4
+  SYN_TFAR: 1.5
+  SYN_STD_ROTATION: 15
+  SYN_STD_TRANSLATION: 0.01
+  SYN_RATIO: 5
+  SYN_BACKGROUND_SPECIFIC: True
+TEST:
+  SINGLE_FRAME: True
+  IMS_PER_BATCH: 4
+  ITERNUM: 4
+  SCALES_BASE: !!python/tuple [1.0]
+  VISUALIZE: True
+  SYNTHESIZE: True
+  ROS_CAMERA: D435

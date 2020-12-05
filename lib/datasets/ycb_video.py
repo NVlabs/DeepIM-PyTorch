@@ -63,6 +63,7 @@ class YCBVideo(data.Dataset, datasets.imdb):
                                            [0.000000e+00, 0.000000e+00, 1.000000e+00]])
         self._width = 640
         self._height = 480
+        self._depth_factor = 10000.0
 
         # select a subset of classes
         self._classes = [self._classes_all[i] for i in cfg.TRAIN.CLASSES]
@@ -120,7 +121,10 @@ class YCBVideo(data.Dataset, datasets.imdb):
         qt = np.zeros((7, ), dtype=np.float32)
         image_tensor = torch.cuda.FloatTensor(height, width, 4).detach()
         seg_tensor = torch.cuda.FloatTensor(height, width, 4).detach()
-        pc_tensor = torch.cuda.FloatTensor(height, width, 4).detach()
+        if cfg.INPUT == 'DEPTH' or cfg.INPUT == 'RGBD':
+            pc_tensor = torch.cuda.FloatTensor(height, width, 4).detach()
+        else:
+            pc_tensor = None
         cfg.renderer.set_projection_matrix(width, height, fx, fy, px, py, znear, zfar)
         classes = np.array(cfg.TRAIN.CLASSES)
 
@@ -215,12 +219,13 @@ class YCBVideo(data.Dataset, datasets.imdb):
             cfg.renderer.render(cls_indexes, image_tensor, seg_tensor, pc2_tensor=pc_tensor)
 
             seg_tensor = seg_tensor.flip(0)
-            pc_tensor = pc_tensor.flip(0)
+            if pc_tensor is not None:
+                pc_tensor = pc_tensor.flip(0)
             im_label = seg_tensor.cpu().numpy()
             im_label = im_label[:, :, (2, 1, 0)] * 255
             im_label = np.round(im_label).astype(np.uint8)
             im_label = np.clip(im_label, 0, 255)
-            im_label = self.process_label_image(im_label, self._class_colors_all)
+            im_label_only, im_label = self.process_label_image(im_label)
 
             # compute occlusion percentage
             mask_target = (im_label == cls_indexes[0]+1).astype(np.int32)
@@ -236,9 +241,10 @@ class YCBVideo(data.Dataset, datasets.imdb):
         im = im[:, :, (2, 1, 0)] * 255
         im = im.astype(np.uint8)
 
-        # depth
-        im_depth = pc_tensor.cpu().numpy()
-        im_depth = im_depth[:, :, :3]
+        if cfg.INPUT == 'DEPTH' or cfg.INPUT == 'RGBD':
+            # XYZ coordinates in camera frame
+            im_depth = pc_tensor.cpu().numpy()
+            im_depth = im_depth[:, :, :3]
 
         label_blob = np.zeros((self.num_classes, height, width), dtype=np.float32)
         for i in range(self.num_classes):
@@ -248,31 +254,39 @@ class YCBVideo(data.Dataset, datasets.imdb):
 
         # foreground mask
         seg = seg_tensor[:,:,2] + 256*seg_tensor[:,:,1] + 256*256*seg_tensor[:,:,0]
-        mask = (seg != 0).unsqueeze(2).repeat((1, 1, 3)).float().cuda()
+        mask = (seg != 0).unsqueeze(2).repeat((1, 1, 3)).float().cpu()
 
         '''
         import matplotlib.pyplot as plt
         fig = plt.figure()
-        ax = fig.add_subplot(1, 2, 1)
+        ax = fig.add_subplot(3, 2, 1)
         plt.imshow(im[:, :, (2, 1, 0)])
-        ax = fig.add_subplot(1, 2, 2)
+        ax = fig.add_subplot(3, 2, 2)
         plt.imshow(im_label)
+        print(per_occ)
+        ax = fig.add_subplot(3, 2, 3)
+        plt.imshow(im_depth[:, :, 0])
+        ax = fig.add_subplot(3, 2, 4)
+        plt.imshow(im_depth[:, :, 1])
+        ax = fig.add_subplot(3, 2, 5)
+        plt.imshow(im_depth[:, :, 2])
         plt.show()
         '''
 
         # chromatic transform
         if cfg.TRAIN.CHROMATIC and cfg.MODE == 'TRAIN' and np.random.rand(1) > 0.1:
             im = chromatic_transform(im)
-
-        im_cuda = torch.from_numpy(im).cuda().float() / 255.0
         if cfg.TRAIN.ADD_NOISE and cfg.MODE == 'TRAIN' and np.random.rand(1) > 0.1:
-            im_cuda = add_noise_cuda(im_cuda)
-        im_cuda -= self._pixel_mean
+            im = add_noise(im)
+        im_tensor = torch.from_numpy(im) / 255.0
+        im_tensor -= self._pixel_mean
 
-        im_cuda_depth = torch.from_numpy(im_depth).cuda().float()
         if cfg.INPUT == 'DEPTH' or cfg.INPUT == 'RGBD':
-            if cfg.TRAIN.ADD_NOISE and cfg.MODE == 'TRAIN':
-                im_cuda_depth = add_noise_depth_cuda(im_cuda_depth)
+            im_depth_tensor = torch.from_numpy(im_depth).float()
+            if cfg.TRAIN.ADD_NOISE and cfg.MODE == 'TRAIN' and np.random.rand(1) > 0.1:
+                im_depth_tensor = add_noise_depth(im_depth_tensor).float()
+        else:
+            im_depth_tensor = im_tensor.clone()
 
         # poses and boxes only for the target object
         pose_blob = np.zeros((1, 9), dtype=np.float32)
@@ -301,6 +315,18 @@ class YCBVideo(data.Dataset, datasets.imdb):
         gt_boxes[0, 3] = np.max(x2d[1, :])
         gt_boxes[0, 4] = cls_target
 
+        # make the same size for pose and box
+        if cfg.MODE == 'TRAIN' or cfg.TEST.IMS_PER_BATCH > 1:
+            pose_blob_final = np.zeros((cfg.TRAIN.MAX_OBJECT_PER_IMAGE, 9), dtype=np.float32)
+            gt_boxes_final = np.zeros((cfg.TRAIN.MAX_OBJECT_PER_IMAGE, 5), dtype=np.float32)
+            n = min(cfg.TRAIN.MAX_OBJECT_PER_IMAGE, pose_blob.shape[0])
+            index = np.random.permutation(pose_blob.shape[0])[:n]
+            pose_blob_final[:n, :] = pose_blob[index, :]
+            gt_boxes_final[:n, :] = gt_boxes[index, :]
+        else:
+            pose_blob_final = pose_blob
+            gt_boxes_final = gt_boxes
+
         # construct the meta data
         K = self._intrinsic_matrix
         Kinv = np.linalg.pinv(K)
@@ -310,20 +336,24 @@ class YCBVideo(data.Dataset, datasets.imdb):
 
         is_syn = 1
         im_info = np.array([im.shape[0], im.shape[1], cfg.TRAIN.SCALES_BASE[0], is_syn], dtype=np.float32)
-        pose_result = np.zeros((1, 9), dtype=np.float32)
+        pose_result = pose_blob.copy()
+        rois_result = np.zeros((1, 7), dtype=np.float32)
 
         # im is pytorch tensor in gpu
-        sample = {'image_color': im_cuda,
-                  'image_depth': im_cuda_depth,
+        sample = {'image_color': im_tensor,
+                  'image_depth': im_depth_tensor,
                   'meta_data': meta_data_blob,
                   'label_blob': label_blob,
                   'mask': mask,
-                  'poses': pose_blob,
+                  'poses': pose_blob_final,
                   'extents': self._extents,
                   'points': self._point_blob,
-                  'gt_boxes': gt_boxes,
+                  'gt_boxes': gt_boxes_final,
                   'poses_result': pose_result,
-                  'im_info': im_info}
+                  'rois_result': rois_result,
+                  'im_info': im_info,
+                  'video_id': '',
+                  'image_id': ''}
 
         return sample
 
@@ -404,22 +434,70 @@ class YCBVideo(data.Dataset, datasets.imdb):
         im_depth = pad_im(cv2.imread(roidb['depth'], cv2.IMREAD_UNCHANGED), 16)
         if im_scale != 1.0:
             im_depth = cv2.resize(im_depth, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_NEAREST)
-        im_depth = im_depth.astype('float') / 10000.0
+        im_depth = im_depth.astype('float') / self._depth_factor
 
         return im_tensor, im_depth, im_scale, height, width
 
 
-    def _get_label_blob(self, roidb, num_classes, im_scale, im_depth, blob_height, blob_width):
+    def _get_label_blob(self, roidb, num_classes, im_scale, im_depth, height, width):
         """ build the label blob """
 
         meta_data = scipy.io.loadmat(roidb['meta_data'])
         meta_data['cls_indexes'] = meta_data['cls_indexes'].flatten()
         classes = np.array(cfg.TRAIN.CLASSES)
 
+        intrinsic_matrix = np.matrix(meta_data['intrinsic_matrix'])
+        fx = intrinsic_matrix[0, 0]
+        fy = intrinsic_matrix[1, 1]
+        px = intrinsic_matrix[0, 2]
+        py = intrinsic_matrix[1, 2]
+        zfar = 10.0
+        znear = 0.01
+
+        # poses
+        poses = meta_data['poses']
+        if len(poses.shape) == 2:
+            poses = np.reshape(poses, (3, 4, 1))
+        if roidb['flipped']:
+            poses = _flip_poses(poses, meta_data['intrinsic_matrix'], width)
+        num = poses.shape[2]
+
         # read label image
-        im_label = pad_im(cv2.imread(roidb['label'], cv2.IMREAD_UNCHANGED), 16)
-        im_label = cv2.resize(im_label, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_NEAREST)
-        label_blob = np.zeros((num_classes, blob_height, blob_width), dtype=np.float32)
+        if 'label' not in roidb:
+
+            # render poses to get the label image
+            cls_indexes = []
+            poses_all = []
+            qt = np.zeros((7, ), dtype=np.float32)
+            for i in range(num):
+                RT = poses[:, :, i]
+                qt[:3] = RT[:, 3]
+                qt[3:] = mat2quat(RT[:, :3])
+                cls_indexes.append(meta_data['cls_indexes'][i] - 1)
+                poses_all.append(qt.copy())
+            
+            # rendering
+            cfg.renderer.set_poses(poses_all)
+            cfg.renderer.set_light_pos([0, 0, 0])
+            cfg.renderer.set_light_color([1, 1, 1])
+            cfg.renderer.set_projection_matrix(width, height, fx, fy, px, py, znear, zfar)
+            image_tensor = torch.cuda.FloatTensor(height, width, 4).detach()
+            seg_tensor = torch.cuda.FloatTensor(height, width, 4).detach()
+            cfg.renderer.render(cls_indexes, image_tensor, seg_tensor)
+            image_tensor = image_tensor.flip(0)
+            seg_tensor = seg_tensor.flip(0)
+
+            # semantic labels
+            im_label = seg_tensor.cpu().numpy()
+            im_label = im_label[:, :, (2, 1, 0)] * 255
+            im_label = np.round(im_label).astype(np.uint8)
+            im_label = np.clip(im_label, 0, 255)
+            _, im_label = self.process_label_image(im_label)
+        else:
+            im_label = pad_im(cv2.imread(roidb['label'], cv2.IMREAD_UNCHANGED), 16)
+            im_label = cv2.resize(im_label, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_NEAREST)
+
+        label_blob = np.zeros((num_classes, height, width), dtype=np.float32)
         num_pixels = np.zeros((num_classes, ), dtype=np.int32)
         for i in range(num_classes):
             I = np.where(im_label == classes[i]+1)
@@ -431,15 +509,7 @@ class YCBVideo(data.Dataset, datasets.imdb):
         seg = torch.from_numpy((im_label != 0).astype(np.float32))
         mask = seg.unsqueeze(2).repeat((1, 1, 3)).float()
 
-        # poses
-        poses = meta_data['poses']
-        if len(poses.shape) == 2:
-            poses = np.reshape(poses, (3, 4, 1))
-        if roidb['flipped']:
-            poses = _flip_poses(poses, meta_data['intrinsic_matrix'], width)
-
         # compute bounding boxes
-        num = poses.shape[2]
         boxes = np.zeros((num, 4), dtype=np.float32)
         for i in range(num):
             cls = int(meta_data['cls_indexes'][i]) - 1
@@ -529,7 +599,7 @@ class YCBVideo(data.Dataset, datasets.imdb):
                 im_depth_tensor = add_noise_depth(im_depth_tensor)
 
         # load posecnn result if available
-        if osp.exists(roidb['posecnn']):
+        if 'posecnn' in roidb and osp.exists(roidb['posecnn']):
             result = scipy.io.loadmat(roidb['posecnn'])
             n = result['poses'].shape[0]
             poses_result = np.zeros((n, 9), dtype=np.float32)
@@ -961,22 +1031,28 @@ class YCBVideo(data.Dataset, datasets.imdb):
         print('============================================')
 
 
-    def process_label_image(self, label_image, class_colors):
+    def process_label_image(self, label_image):
         """
         change label image to label index
         """
         height = label_image.shape[0]
         width = label_image.shape[1]
         labels = np.zeros((height, width), dtype=np.int32)
+        labels_all = np.zeros((height, width), dtype=np.int32)
 
         # label image is in BGR order
         index = label_image[:,:,2] + 256*label_image[:,:,1] + 256*256*label_image[:,:,0]
-        for i in range(len(class_colors)):
-            color = class_colors[i]
+        for i in range(len(self._class_colors_all)):
+            color = self._class_colors_all[i]
             ind = color[0] + 256*color[1] + 256*256*color[2]
             I = np.where(index == ind)
-            labels[I[0], I[1]] = i + 1
-        return labels
+            labels_all[I[0], I[1]] = i + 1
+
+            ind = np.where(np.array(cfg.TRAIN.CLASSES) == i)[0]
+            if len(ind) > 0:
+                labels[I[0], I[1]] = ind + 1
+
+        return labels, labels_all
 
 
     def evaluation(self, output_dir):

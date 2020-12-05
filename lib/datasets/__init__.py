@@ -5,6 +5,7 @@
 from .imdb import imdb
 from .ycb_video import YCBVideo
 from .ycb_object import YCBObject
+from .ycb_self_supervision import YCBSelfSupervision
 from .background import BackgroundDataset
 from .dex_ycb import DexYCBDataset
 import os.path as osp
