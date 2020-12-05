@@ -340,8 +340,8 @@ class YCBVideo(data.Dataset, datasets.imdb):
         rois_result = np.zeros((1, 7), dtype=np.float32)
 
         # im is pytorch tensor in gpu
-        sample = {'image_color': im_tensor,
-                  'image_depth': im_depth_tensor,
+        sample = {'image_color': im_tensor.float(),
+                  'image_depth': im_depth_tensor.float(),
                   'meta_data': meta_data_blob,
                   'label_blob': label_blob,
                   'mask': mask,
@@ -384,8 +384,8 @@ class YCBVideo(data.Dataset, datasets.imdb):
         is_syn = roidb['is_syn']
         im_info = np.array([height, width, im_scale, is_syn], dtype=np.float32)
 
-        sample = {'image_color': im_blob,
-                  'image_depth': im_depth_tensor,
+        sample = {'image_color': im_blob.float(),
+                  'image_depth': im_depth_tensor.float(),
                   'meta_data': meta_data_blob,
                   'label_blob': label_blob,
                   'mask': mask,
@@ -596,7 +596,7 @@ class YCBVideo(data.Dataset, datasets.imdb):
         im_depth_tensor = torch.from_numpy(im_xyz).float()
         if cfg.INPUT == 'DEPTH' or cfg.INPUT == 'RGBD':
             if cfg.TRAIN.ADD_NOISE and cfg.MODE == 'TRAIN':
-                im_depth_tensor = add_noise_depth(im_depth_tensor)
+                im_depth_tensor = add_noise_depth(im_depth_tensor).float()
 
         # load posecnn result if available
         if 'posecnn' in roidb and osp.exists(roidb['posecnn']):
