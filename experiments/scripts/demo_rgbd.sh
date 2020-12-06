@@ -11,6 +11,6 @@ time ./tools/test_images.py --gpu 0 \
   --meta data/demo/meta.yml \
   --color *color.png \
   --network flownets_rgbd \
-  --pretrained data/checkpoints/ycb_object/flownets_ycb_object_20objects_rgbd_epoch_20.checkpoint.pth \
+  --pretrained data/checkpoints/ycb_object/flownets_ycb_object_20objects_rgbd_self_supervision_epoch_10.checkpoint.pth \
   --dataset ycb_object_test \
   --cfg experiments/cfgs/ycb_object_flow_rgbd.yml

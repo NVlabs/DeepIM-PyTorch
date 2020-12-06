@@ -86,6 +86,7 @@ if __name__ == '__main__':
     cfg.classes = cfg.TEST.CLASSES
     cfg.MODE = 'TEST'
     cfg.TEST.SYNTHESIZE = False
+    cfg.TEST.VISUALIZE = False
     dataset = get_dataset(args.dataset_name)
 
     # prepare network
