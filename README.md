@@ -51,7 +51,13 @@ Use python3. If ROS is needed, compile with python2.
     sudo python setup.py install
     ```
 
-5. Compile the ycb_render in $ROOT/ycb_render
+5. Compile cython components
+    ```Shell
+    cd $ROOT/lib/utils
+    python setup.py build_ext --inplace
+    ```
+
+6. Compile the ycb_render in $ROOT/ycb_render
     ```Shell
     cd $ROOT/ycb_render
     sudo python setup.py develop
@@ -61,7 +67,7 @@ Use python3. If ROS is needed, compile with python2.
 
 - 3D models of YCB Objects we used [here](https://drive.google.com/file/d/1PTNmhd-eSq0fwSPv0nvQN8h_scR1v-UJ/view?usp=sharing) (3G). Save under $ROOT/data or use a symbol link.
 
-- Our pre-trained checkpoints [here](https://drive.google.com/file/d/1iokU2LhQbF3kjHDqpb_I1WT1n_XBoQUm/view?usp=sharing) (3G). Save under $ROOT/data or use a symbol link.
+- Our pre-trained checkpoints [here](https://drive.google.com/file/d/1iokU2LhQbF3kjHDqpb_I1WT1n_XBoQUm/view?usp=sharing) (3.6G). Save under $ROOT/data or use a symbol link.
 
 - Our real-world images with pose annotations for 20 YCB objects collected via robot interation [here](https://drive.google.com/file/d/1cQH_dnDzyrI0MWNx8st4lht_q0F6cUrE/view?usp=sharing) (53G). Check our ICRA 2020 [paper](https://arxiv.org/abs/1909.10159) for details.
 
@@ -147,3 +153,5 @@ roslaunch realsense2_camera rs_aligned_depth.launch tf_prefix:=measured/camera
 ./experiments/scripts/ros_ycb_object_rgbd_test.sh $GPU_ID
 
 ```
+Our example:
+<p align="center"><img src="./data/pics/deepim.gif"/></p>

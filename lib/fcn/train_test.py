@@ -356,9 +356,11 @@ def render_image(dataset, im, poses):
     im_render = im_render[:, :, :3] * 255
     im_render = im_render.astype(np.uint8)
 
-    im_output = 0.4 * im[:,:,(2, 1, 0)].astype(np.float32) + 0.6 * im_render.astype(np.float32)
+    im_output = 0.8 * im[:,:,(2, 1, 0)].astype(np.float32) + 1.0 * im_render.astype(np.float32)
+    im_output = np.clip(im_output, 0, 255)
+    im_output = im_output.astype(np.uint8)
 
-    return im_output.astype(np.uint8), im_label, pcloud
+    return im_output, im_label, pcloud
 
 
 def initialize_poses(sample):

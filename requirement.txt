@@ -11,3 +11,4 @@ pyyaml
 future
 scipy
 Cython
+cupy

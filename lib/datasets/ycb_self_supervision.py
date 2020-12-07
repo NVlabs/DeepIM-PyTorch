@@ -26,7 +26,6 @@ from utils.blob import pad_im, chromatic_transform, add_noise, add_noise_cuda
 from transforms3d.quaternions import mat2quat, quat2mat
 from utils.se3 import *
 from utils.pose_error import *
-from utils.cython_bbox import bbox_overlaps
 from datasets.ycb_video import YCBVideo
 
 
