@@ -15,6 +15,7 @@ import cv2
 import scipy
 import threading
 import cupy
+import copy
 
 from fcn.config import cfg
 from fcn.multiscaleloss import multiscaleEPE, realEPE
@@ -734,7 +735,7 @@ def test(test_loader, background_loader, network, output_dir):
                 weights_rot, extents, points, affine_matrices, zoom_factor, vdata = \
                 process_sample(sample, poses_est, test_data)
             
-            vis_data.append(vdata)
+            vis_data.append(copy.deepcopy(vdata))
             if j == 0:
                 poses_init = vdata['pose_src']
 
@@ -853,7 +854,7 @@ def test_image(network, dataset, im_color, im_depth, poses_est, test_data):
             weights_rot, extents, points, affine_matrices, \
             zoom_factor, vdata = process_sample(sample, poses_est, test_data)
 
-        vis_data.append(vdata)
+        vis_data.append(copy.deepcopy(vdata))
         if j == 0:
             poses_init = vdata['pose_src']
 
