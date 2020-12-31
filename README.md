@@ -138,7 +138,7 @@ Use python3. If ROS is needed, compile with python2.
 
 - Make sure our pretrained checkpoints are downloaded.
 
-- Make sure PoseCNN is running to provide initial pose estimation to DeepIM.
+- Make sure [PoseCNN](https://github.com/NVlabs/PoseCNN-PyTorch) is running to provide initial pose estimation to DeepIM.
 
 ```Shell
 # start realsense
