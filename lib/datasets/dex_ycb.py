@@ -305,7 +305,8 @@ class DexYCBDataset(data.Dataset, datasets.imdb):
         image_id = '%06d' % (im_id)
 
         # posecnn result path
-        posecnn_result_path = os.path.join(self._dex_ycb_path, 'results_posecnn', self._name, video_id + '_' + image_id + '.mat')
+        posecnn_result_path = os.path.join(self._dex_ycb_path, 'results_posecnn', self._name, \
+            'vgg16_dex_ycb_epoch_16.checkpoint.pth', video_id + '_' + image_id + '.mat')
 
         d = os.path.join(self._data_dir, self._sequences[s], self._serials[c])
         roidb = {
@@ -641,7 +642,7 @@ class DexYCBDataset(data.Dataset, datasets.imdb):
 
                 # pose from network of the last iteration
                 R = quat2mat(result['poses_est'][-1][j, 2:6].flatten())
-                t = result['poses_est'][-1][j, 6:]
+                t = result['poses_est'][-1][j, 6:] * 1000
                 line = '{scene_id},{im_id},{obj_id},{score},{R},{t},{time}\n'.format(
                     scene_id=scene_id,
                     im_id=im_id,

@@ -132,6 +132,49 @@ Use python3. If ROS is needed, compile with python2.
 
     ```
 
+### Training and testing on the DexYCB dataset
+1. Download the DexYCB dataset from [here](https://dex-ycb.github.io/).
+
+2. Download PoseCNN results on the DexYCB dataset from [here](https://drive.google.com/file/d/1RguqnMAekb18d9mIj2ZctDWb7q2xJtbZ/view?usp=sharing).
+
+3. Create a symlink for the DexYCB dataset and the PoseCNN results
+    ```Shell
+    cd $ROOT/data/DEX_YCB
+    ln -s $dex_ycb_data data
+    ln -s $results_posecnn_data results_posecnn
+    ```
+
+4. Training and testing on the DexYCB dataset
+    ```Shell
+    cd $ROOT
+
+    # multi-gpu training for different splits, we used 4 GPUs
+    ./experiments/scripts/dex_ycb_flow_train_s0.sh
+    ./experiments/scripts/dex_ycb_flow_train_s1.sh
+    ./experiments/scripts/dex_ycb_flow_train_s2.sh
+    ./experiments/scripts/dex_ycb_flow_train_s3.sh
+
+    # use RGB and depth
+    ./experiments/scripts/dex_ycb_flow_rgbd_train_s0.sh
+    ./experiments/scripts/dex_ycb_flow_rgbd_train_s1.sh
+    ./experiments/scripts/dex_ycb_flow_rgbd_train_s2.sh
+    ./experiments/scripts/dex_ycb_flow_rgbd_train_s3.sh
+
+    # testing, $GPU_ID can be 0, 1, etc.
+    # our trained models are in checkpoints.zip
+    ./experiments/scripts/dex_ycb_flow_test_s0.sh $GPU_ID $EPOCH
+    ./experiments/scripts/dex_ycb_flow_test_s1.sh $GPU_ID $EPOCH
+    ./experiments/scripts/dex_ycb_flow_test_s2.sh $GPU_ID $EPOCH
+    ./experiments/scripts/dex_ycb_flow_test_s3.sh $GPU_ID $EPOCH
+
+    # test RGB-D version
+    ./experiments/scripts/dex_ycb_flow_rgbd_test_s0.sh $GPU_ID $EPOCH
+    ./experiments/scripts/dex_ycb_flow_rgbd_test_s1.sh $GPU_ID $EPOCH
+    ./experiments/scripts/dex_ycb_flow_rgbd_test_s2.sh $GPU_ID $EPOCH
+    ./experiments/scripts/dex_ycb_flow_rgbd_test_s3.sh $GPU_ID $EPOCH
+
+    ```
+
 ### Running with ROS on a Realsense Camera for real-world pose estimation with PoseCNN
 
 - Python2 is needed for ROS.
